@@ -22,7 +22,8 @@ During the analysis and design phase of this project, the following AI tools wer
 The AI tools supported the following activities:
 
 - Understanding and refactoring TypeScript modules
-- Designing type-safe i18n services and translation functions
+- Designing type-safe classes and functions
+- Creating comprehensive documentation and comments
 - Generating unit tests and test strategies
 - Explaining module-level behaviors and ES module import semantics
 - Maintaining consistency between business logic and runtime behavior
