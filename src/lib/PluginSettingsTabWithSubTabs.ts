@@ -4,7 +4,6 @@ import { App,
 import type { PluginWithSettings            } from "ts-obsidian-plugin";
 
 import type { PluginSettingsRenderContext,
-              /*PluginSettingsSubTab,*/
               PluginSettingsSubTabRegistry,
               PluginSettingsSubTabIdMap,
               PluginSettingsSubTabId        } from "./types";
