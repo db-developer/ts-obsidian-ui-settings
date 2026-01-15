@@ -6,6 +6,33 @@ import type { PluginWithSettings            } from "ts-obsidian-plugin";
 import type { PluginSettingsSubTab,
               PluginSettingsSubTabRegistry  } from "../lib/types";
 
+function createMockElement(): any {
+  return {
+    children: [] as any[],
+    className: "",
+    textContent: "",
+    createEl(tag: string, opts: any = {}) {
+      const el = createMockElement();
+      if (opts.text) el.textContent = opts.text;
+      if (opts.cls) el.className = opts.cls;
+      this.children.push(el);
+      return el;
+    },
+    createDiv(opts: any = {}) {
+      return this.createEl("div", opts);
+    },
+    empty() {
+      this.children = [];
+    },
+    addClass(cls: string) {
+      this.className = `${this.className} ${cls}`.trim();
+    },
+    addEventListener(_evt: string, fn: Function) {
+      this._listener = fn;
+    },
+    _listener: undefined as undefined | Function,
+  };
+}              
 
 /**
  * Test the navigation rendering and button click behavior of PluginSettingsTabWithSubTabs.
@@ -33,63 +60,58 @@ describe(`Running ${(fileURLToPath(import.meta.url).split(path.sep).join("/").sp
       }
     }
     
-    class TestTab extends PluginSettingsTabWithSubTabs<TestSettings, Record<string, true>> {
+    class TestTab extends PluginSettingsTabWithSubTabs<
+      TestSettings, Record<string, true>
+    > {
       constructor(
         plugin: PluginWithSettings<TestSettings>,
-        subTabs: PluginSettingsSubTabRegistry<TestSettings, Record<string, true>>,
+        subTabs: PluginSettingsSubTabRegistry<
+          TestSettings,
+          Record<string, true>
+        >,
         defaultSubTabId: "tab1" | "tab2"
       ) {
-        // @ts-expect-error mocking App not needed
+        // @ts-expect-error App not required for test
         super(undefined, plugin, subTabs, defaultSubTabId);
       }
 
-      // override display so we can spy on it
       override display() {}
     }
 
+
     test("renders buttons for each sub-tab with correct headers and handles click", () => {
       const plugin = new DummyPlugin();
-      const subTabs: PluginSettingsSubTabRegistry<TestSettings, Record<string, true>> = {
+
+      const subTabs: PluginSettingsSubTabRegistry<
+        TestSettings,
+        Record<string, true>
+      > = {
         tab1: new TestSubTab("Tab One"),
         tab2: new TestSubTab("Tab Two"),
       };
 
       const tab = new TestTab(plugin, subTabs, "tab1");
 
-      // Mock containerEl
-      const container: any = {
-        createEl: vi.fn((tag: string, opts: any) => {
-          const el: any = { ...opts, addEventListener: vi.fn() };
-          return el;
-        }),
-      };
+      const container = createMockElement();
       tab.containerEl = container;
+
+      const displaySpy = vi.spyOn(tab, "display");
 
       tab.renderNavigation(container);
 
-      // Check createEl called twice (once per tab)
-      expect(container.createEl).toHaveBeenCalledTimes(2);
+      const buttons = container.children;
+      expect(buttons.length).toBe(2);
 
-      // Check button headers
-      expect(container.createEl.mock.calls[0][1].text).toBe("Tab One");
-      expect(container.createEl.mock.calls[1][1].text).toBe("Tab Two");
+      expect(buttons[0].children[0].textContent).toBe("Tab One");
+      expect(buttons[1].children[0].textContent).toBe("Tab Two");
 
-      // Extract the mocked buttons
-      const button1 = container.createEl.mock.results[0].value;
-      const button2 = container.createEl.mock.results[1].value;
-
-      // Spy on display
-      const displaySpy = vi.spyOn(tab, "display");
-
-      // Simulate click on inactive tab
-      button2.addEventListener.mock.calls[0][1](); // call click callback
+      buttons[1]._listener();
       expect(tab.activeSubTabId).toBe("tab2");
-      expect(displaySpy).toHaveBeenCalled();
+      expect(displaySpy).toHaveBeenCalledTimes(1);
 
-      // Simulate click on already active tab
       displaySpy.mockClear();
-      button2.addEventListener.mock.calls[0][1]();
-      expect(tab.activeSubTabId).toBe("tab2"); // unchanged
+      buttons[1]._listener();
+      expect(tab.activeSubTabId).toBe("tab2");
       expect(displaySpy).not.toHaveBeenCalled();
     });
 
@@ -100,27 +122,22 @@ describe(`Running ${(fileURLToPath(import.meta.url).split(path.sep).join("/").sp
       const subTab1 = new TestSubTab("Tab One");
       const subTab2 = new TestSubTab("Tab Two");
 
-      const subTabs: PluginSettingsSubTabRegistry<TestSettings, Record<string, true>> = {
+      const subTabs: PluginSettingsSubTabRegistry<
+        TestSettings,
+        Record<string, true>
+      > = {
         tab1: subTab1,
         tab2: subTab2,
       };
 
       const tab = new TestTab(plugin, subTabs, "tab1");
 
-      // Mock containerEl
-      const container: any = { empty: vi.fn() };
+      const container = createMockElement();
       tab.containerEl = container;
 
-      // Render active sub-tab
       tab.renderActiveSubTab(container);
 
-      // Grab the context passed to the sub-tab
-      const context = subTab1.lastContext;
-
-      // Call the saveSettings function from context
-      await context.saveSettings();
-
-      // Expect plugin.saveSettings to have been called
+      await subTab1.lastContext.saveSettings();
       expect(saveSpy).toHaveBeenCalledTimes(1);
     });
   });

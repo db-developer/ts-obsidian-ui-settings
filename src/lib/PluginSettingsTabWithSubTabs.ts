@@ -89,8 +89,8 @@ export abstract class PluginSettingsTabWithSubTabs<
   override display(): void {
     this.containerEl.empty();
 
-    const navigationEl = this.containerEl.createDiv({
-      cls: "plugin-settings-subtab-nav",
+    const navigationEl = this.containerEl.createEl(
+      "nav", { cls: "plugin-settings-subtab-nav"
     });
 
     const contentEl = this.containerEl.createDiv({
@@ -114,14 +114,16 @@ export abstract class PluginSettingsTabWithSubTabs<
 
       const subTab = this.subTabs[tabId];
 
-      const button = containerEl.createEl("button", {
-        text: subTab.header,
-        cls: tabId === this.activeSubTabId
-          ? "is-active"
-          : undefined,
-      });
+      const tabElem = containerEl.createEl( "div", { cls: "plugin-settings-subtab-nav-tab" });
+            tabElem.createEl( "div", { cls: "plugin-settings-subtab-nav-tab-name", 
+                                text: subTab.header });
+      
+      // <= plugin-settings-subtab-nav-tab-active
+      if ( tabId === this.activeSubTabId ) {
+           tabElem.addClass( "plugin-settings-subtab-nav-tab-active" );
+      }
 
-      button.addEventListener("click", () => {
+      tabElem.addEventListener("click", () => {
         if (this.activeSubTabId !== tabId) {
           this.activeSubTabId = tabId;
           this.display();

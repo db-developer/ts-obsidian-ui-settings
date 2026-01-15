@@ -7,11 +7,25 @@ import type { PluginSettingsSubTab,
 import type { PluginWithSettings          } from "ts-obsidian-plugin";
 
 // mocks for DOM elements
-function createMockContainer() {
+function createMockElement(): any {
   return {
-    empty: vi.fn(),
-    createDiv: vi.fn(() => createMockContainer()),
-    createEl: vi.fn(() => createMockContainer()),
+    children: [] as any[],
+    className: "",
+    createEl(tag: string, opts: any = {}) {
+      const el = createMockElement();
+      if (opts?.cls) el.className = opts.cls;
+      this.children.push(el);
+      return el;
+    },
+    createDiv(opts: any = {}) {
+      return this.createEl("div", opts);
+    },
+    empty: vi.fn(function () {
+      this.children = [];
+    }),
+    addClass(cls: string) {
+      this.className = `${this.className} ${cls}`.trim();
+    },
     addEventListener: vi.fn(),
     appendChild: vi.fn(),
   };
@@ -59,20 +73,17 @@ describe(
       test("calls renderNavigation and renderActiveSubTab with correct container", () => {
         const tab = new TestTab(app, plugin as any, subTabs, "tab1");
 
-        // mock the main containerEl
-        const container = createMockContainer();
+        const container = createMockElement();
         tab.containerEl = container;
 
-        // spies
         const navSpy = vi.spyOn(tab, "renderNavigation");
         const activeSpy = vi.spyOn(tab, "renderActiveSubTab");
 
         tab.display();
 
-        // assertions
-        expect(container.empty).toHaveBeenCalled();
-        expect(navSpy).toHaveBeenCalled();
-        expect(activeSpy).toHaveBeenCalled();
+        expect(container.empty).toHaveBeenCalledTimes(1);
+        expect(navSpy).toHaveBeenCalledTimes(1);
+        expect(activeSpy).toHaveBeenCalledTimes(1);
       });
     });
   }

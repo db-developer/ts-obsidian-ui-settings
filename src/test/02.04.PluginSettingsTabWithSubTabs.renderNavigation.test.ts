@@ -29,10 +29,35 @@ const subTabRegistry: PluginSettingsSubTabRegistry<DummySettings, DummySubTabIds
 };
 
 class DummyPlugin {
-  async saveData() {}
+  async saveSettings() {}
 }
 
-// Tests
+// obsidian-like DOM mock
+function createMockElement(): any {
+  return {
+    children: [] as any[],
+    className: "",
+    textContent: "",
+    createEl(tag: string, options: { text?: string; cls?: string } = {}) {
+      const el = createMockElement();
+      if (options.text) el.textContent = options.text;
+      if (options.cls) el.className = options.cls;
+      this.children.push(el);
+      return el;
+    },
+    createDiv(options: { cls?: string } = {}) {
+      return this.createEl("div", options);
+    },
+    empty() {
+      this.children = [];
+    },
+    addClass(cls: string) {
+      this.className = `${this.className} ${cls}`.trim();
+    },
+    addEventListener() {},
+  };
+}
+
 /**
  * Test the navigation rendering logic of PluginSettingsTabWithSubTabs.
  * Verifies that each sub-tab in the registry is represented by a button
@@ -42,46 +67,40 @@ describe(`Running ${(fileURLToPath(import.meta.url).split(path.sep).join("/").sp
   describe("Testing PluginSettingsTabWithSubTabs::renderNavigation", () => {
 
     test("renders buttons for each sub-tab with correct headers", () => {
-      // Arrange
-      const container = {
-        children: [] as HTMLElement[],
-        empty() { this.children = []; },
-        createEl(tag: string, options: { text?: string; cls?: string } = {}) {
-          const el = document.createElement(tag);
-          if (options.text) el.textContent = options.text;
-          if (options.cls) el.className = options.cls;
-          this.children.push(el);
-          return el;
-        }
-      } as unknown as HTMLElement;
-      const activeId: keyof typeof subTabRegistry = "general";
+      const container = createMockElement();
 
-      class TestTab extends PluginSettingsTabWithSubTabs<DummySettings, DummySubTabIds> {
+      const activeId: keyof typeof subTabRegistry = "general";
+      class TestTab extends PluginSettingsTabWithSubTabs<DummySettings,DummySubTabIds> {
         constructor() {
           super(
-            {} as any, // app mock
-            {} as any as any, // plugin mock
+            {} as any,
+            {} as any,
             subTabRegistry,
             activeId
           );
         }
       }
-
       const tab = new TestTab();
 
-      // Act
-      tab["renderNavigation"](container); // protected, access via bracket notation
+      tab["renderNavigation"](container);
 
-      // Assert
-      const buttons = Array.from(container.children);
+      const buttons = container.children;
+
       expect(buttons.length).toBe(2);
-      expect(buttons[0].textContent).toBe("General");
-      expect(buttons[1].textContent).toBe("Structure");
+      expect(buttons[0].children[0].textContent).toBe("General");
+      expect(buttons[1].children[0].textContent).toBe("Structure");
 
-      // Active tab should have a class applied
-      expect(buttons[0].className.includes("active")).toBe(true);
-      expect(buttons[1].className.includes("active")).toBe(false);
+      expect(
+        buttons[0].className.includes(
+          "plugin-settings-subtab-nav-tab-active"
+        )
+      ).toBe(true);
+
+      expect(
+        buttons[1].className.includes(
+          "plugin-settings-subtab-nav-tab-active"
+        )
+      ).toBe(false);
     });
-
   });
 });
