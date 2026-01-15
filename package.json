@@ -1,6 +1,6 @@
 {
   "name": "ts-obsidian-ui-settings",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Unified abstraction for obsidian setting ui with support für tabs",
   "author": "Dirk Brenckmann <db.developer@gmx.de>",
   "license": "MIT",

@@ -1,3 +1,4 @@
+import { Plugin                  } from "obsidian";
 import type { PluginWithSettings } from "ts-obsidian-plugin";
 
 /**
@@ -45,5 +46,5 @@ export interface PluginSettingsRenderContext<TSettings extends object> {
    * {@link PluginWithSettings} in order to prevent sub-tabs
    * from relying on concrete plugin implementations.
    */
-  readonly plugin: PluginWithSettings<TSettings>;
+  readonly plugin: Plugin & PluginWithSettings<TSettings>;
 }
